@@ -171,8 +171,23 @@
   .admin-product-info span { font-size: .8rem; color: var(--muted); }
   .stock-select { border: 1.5px solid var(--border); border-radius: 8px; padding: .35rem .6rem; font-size: .82rem; font-family: 'DM Sans', sans-serif; background: var(--bg); cursor: pointer; }
 
-  .img-preview { width: 100%; max-height: 180px; object-fit: contain; border-radius: 8px; margin-top: .5rem; display: none; background: var(--border); }
-  .upload-progress { font-size: .8rem; color: var(--muted); margin-top: .3rem; display: none; }
+  .edit-btn { background: var(--accent); color: var(--dark); border: none; border-radius: 8px; padding: .5rem 1rem; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: .85rem; cursor: pointer; flex-shrink: 0; }
+  .edit-btn:hover { background: #e0a83c; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(26,18,8,.5); z-index: 300; opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -60%);
+    width: min(560px, 95vw); background: var(--surface); border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(26,18,8,.2); z-index: 301;
+    opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+    display: flex; flex-direction: column; max-height: 90vh;
+  }
+  .modal.open { opacity: 1; pointer-events: all; transform: translate(-50%, -50%); }
+  .modal-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; }
+  .modal-body { padding: 1.2rem 1.5rem; overflow-y: auto; flex: 1; }
+  .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
 
   .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--dark); color: #fff; padding: .7rem 1.5rem; border-radius: 999px; font-size: .9rem; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 999; white-space: nowrap; }
   .toast.show { opacity: 1; }
@@ -322,6 +337,59 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-overlay" onclick="closeEditModal()"></div>
+<div class="modal" id="edit-modal">
+  <div class="modal-header">
+    <h3>Editar Producto</h3>
+    <button class="close-btn" onclick="closeEditModal()">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="edit-id">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" id="edit-name">
+      </div>
+      <div class="form-group">
+        <label>Categoría</label>
+        <input type="text" id="edit-cat" list="cat-list">
+      </div>
+      <div class="form-group">
+        <label>Tamaño</label>
+        <input type="text" id="edit-size">
+      </div>
+      <div class="form-group">
+        <label>Precio ($)</label>
+        <input type="number" id="edit-price">
+      </div>
+      <div class="form-group">
+        <label>Stock</label>
+        <select id="edit-stock">
+          <option value="in">En stock</option>
+          <option value="low">Pocas unidades</option>
+          <option value="out">Sin stock</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nueva imagen (opcional)</label>
+        <input type="file" id="edit-img" accept="image/*" onchange="previewEditImg(this)">
+        <div class="upload-progress" id="edit-upload-progress">Subiendo imagen...</div>
+      </div>
+      <div class="form-group full" id="edit-img-preview-wrap" style="display:none">
+        <img id="edit-img-preview" style="width:100%;max-height:160px;object-fit:contain;border-radius:8px;background:var(--border)">
+      </div>
+      <div class="form-group full">
+        <label>Descripción</label>
+        <textarea id="edit-desc" rows="2"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="save-btn" id="edit-save-btn" onclick="saveEdit()" style="margin-top:0">Guardar cambios</button>
+  </div>
+</div>
 
 <!-- FIREBASE -->
 <script type="module">
@@ -513,6 +581,7 @@ function renderAdminList() {
         <option value="low" ${p.stock==='low'?'selected':''}>⚠ Pocas unidades</option>
         <option value="out" ${p.stock==='out'?'selected':''}>❌ Sin stock</option>
       </select>
+      <button class="edit-btn" onclick="openEditModal('${p.id}')">✏ Editar</button>
       <button class="danger-btn" onclick="deleteProduct('${p.id}')">Eliminar</button>
     </div>`).join('');
 }
@@ -586,7 +655,73 @@ window.checkoutWA = async function() {
   window.open(`https://wa.me/${cfg.wa}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
-// ── IMAGE PREVIEW ─────────────────────────────────────────
+// ── EDIT MODAL ────────────────────────────────────────────
+window.openEditModal = function(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('edit-id').value    = p.id;
+  document.getElementById('edit-name').value  = p.name;
+  document.getElementById('edit-cat').value   = p.category;
+  document.getElementById('edit-size').value  = p.size || '';
+  document.getElementById('edit-price').value = p.price || '';
+  document.getElementById('edit-stock').value = p.stock;
+  document.getElementById('edit-desc').value  = p.desc || '';
+  document.getElementById('edit-img').value   = '';
+  const wrap = document.getElementById('edit-img-preview-wrap');
+  if (p.img) {
+    document.getElementById('edit-img-preview').src = p.img;
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+  document.getElementById('edit-upload-progress').style.display = 'none';
+  document.getElementById('edit-overlay').classList.add('open');
+  document.getElementById('edit-modal').classList.add('open');
+};
+window.closeEditModal = function() {
+  document.getElementById('edit-overlay').classList.remove('open');
+  document.getElementById('edit-modal').classList.remove('open');
+};
+window.previewEditImg = function(input) {
+  if (!input.files.length) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('edit-img-preview');
+    img.src = e.target.result;
+    document.getElementById('edit-img-preview-wrap').style.display = 'block';
+  };
+  reader.readAsDataURL(input.files[0]);
+};
+window.saveEdit = async function() {
+  const id  = document.getElementById('edit-id').value;
+  const btn = document.getElementById('edit-save-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  let imgUrl = null;
+  const fileInput = document.getElementById('edit-img');
+  if (fileInput.files.length) {
+    document.getElementById('edit-upload-progress').style.display = 'block';
+    imgUrl = await uploadToCloudinary(fileInput.files[0]);
+    document.getElementById('edit-upload-progress').style.display = 'none';
+  }
+
+  const updates = {
+    name:     document.getElementById('edit-name').value.trim(),
+    category: document.getElementById('edit-cat').value.trim(),
+    size:     document.getElementById('edit-size').value.trim(),
+    price:    parseFloat(document.getElementById('edit-price').value) || 0,
+    stock:    document.getElementById('edit-stock').value,
+    desc:     document.getElementById('edit-desc').value.trim(),
+  };
+  if (imgUrl) updates.img = imgUrl;
+
+  await updateDoc(doc(db, COL_PRODUCTS, id), updates);
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+  closeEditModal();
+  showToast('✓ Producto actualizado');
+};
+
+// ── IMAGE PREVIEW (agregar producto) ──────────────────────
 window.previewImg = function(input) {
   if (!input.files.length) return;
   const reader = new FileReader();
