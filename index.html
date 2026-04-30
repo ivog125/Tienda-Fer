@@ -443,7 +443,7 @@ async function uploadToCloudinary(file) {
   if (!cloud) { showToast('Configurá el Cloud Name de Cloudinary primero'); return null; }
   const fd = new FormData();
   fd.append('file', file);
-  fd.append('upload_preset', 'tienda_unsigned'); // preset que vas a crear en Cloudinary
+  fd.append('upload_preset', 'tienda_fer');
   const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud}/image/upload`, { method: 'POST', body: fd });
   const data = await res.json();
   return data.secure_url || null;
