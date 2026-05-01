@@ -171,6 +171,8 @@
   .admin-product-info span { font-size: .8rem; color: var(--muted); }
   .stock-select { border: 1.5px solid var(--border); border-radius: 8px; padding: .35rem .6rem; font-size: .82rem; font-family: 'DM Sans', sans-serif; background: var(--bg); cursor: pointer; }
 
+  .admin-cat-header { display: flex; align-items: center; justify-content: space-between; padding: .6rem .2rem; margin-top: 1.2rem; margin-bottom: .4rem; border-bottom: 2px solid var(--accent); }
+  .admin-cat-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; }
   .edit-btn { background: var(--accent); color: var(--dark); border: none; border-radius: 8px; padding: .5rem 1rem; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: .85rem; cursor: pointer; flex-shrink: 0; }
   .edit-btn:hover { background: #e0a83c; }
 
@@ -569,22 +571,40 @@ window.renderCatalog = renderCatalog;
 function renderAdminList() {
   const el = document.getElementById('admin-product-list');
   if (!products.length) { el.innerHTML = '<p style="color:var(--muted)">No hay productos. Usá la pestaña "Agregar Producto".</p>'; return; }
-  el.innerHTML = products.map(p => `
-    <div class="admin-product-row">
-      <div class="admin-thumb">${p.img ? `<img src="${p.img}" alt="">` : '📦'}</div>
-      <div class="admin-product-info">
-        <strong>${p.name}</strong>
-        <span>${p.category}${p.size?' · '+p.size:''} ${p.price?'· $'+Number(p.price).toLocaleString('es-AR'):''}</span>
+  const categories = [...new Set(products.map(p => p.category))];
+  el.innerHTML = categories.map(cat => {
+    const catProducts = products.filter(p => p.category === cat);
+    return `
+      <div class="admin-cat-header">
+        <span class="admin-cat-title">${cat} <small style="color:var(--muted);font-weight:400">(${catProducts.length} productos)</small></span>
+        <button class="danger-btn" onclick="deleteCategory('${cat}')">🗑 Eliminar categoría</button>
       </div>
-      <select class="stock-select" onchange="updateStock('${p.id}', this.value)">
-        <option value="in" ${p.stock==='in'?'selected':''}>✅ En stock</option>
-        <option value="low" ${p.stock==='low'?'selected':''}>⚠ Pocas unidades</option>
-        <option value="out" ${p.stock==='out'?'selected':''}>❌ Sin stock</option>
-      </select>
-      <button class="edit-btn" onclick="openEditModal('${p.id}')">✏ Editar</button>
-      <button class="danger-btn" onclick="deleteProduct('${p.id}')">Eliminar</button>
-    </div>`).join('');
+      ${catProducts.map(p => `
+        <div class="admin-product-row">
+          <div class="admin-thumb">${p.img ? `<img src="${p.img}" alt="">` : '📦'}</div>
+          <div class="admin-product-info">
+            <strong>${p.name}</strong>
+            <span>${p.size ? p.size : ''} ${p.price ? '· $'+Number(p.price).toLocaleString('es-AR') : ''}</span>
+          </div>
+          <select class="stock-select" onchange="updateStock('${p.id}', this.value)">
+            <option value="in" ${p.stock==='in'?'selected':''}>✅ En stock</option>
+            <option value="low" ${p.stock==='low'?'selected':''}>⚠ Pocas unidades</option>
+            <option value="out" ${p.stock==='out'?'selected':''}>❌ Sin stock</option>
+          </select>
+          <button class="edit-btn" onclick="openEditModal('${p.id}')">✏ Editar</button>
+          <button class="danger-btn" onclick="deleteProduct('${p.id}')">Eliminar</button>
+        </div>`).join('')}
+    `;
+  }).join('');
 }
+
+async function deleteCategoryFn(cat) {
+  const catProducts = products.filter(p => p.category === cat);
+  if (!confirm(`¿Eliminar la categoría "${cat}" y sus ${catProducts.length} productos? Esta acción no se puede deshacer.`)) return;
+  for (const p of catProducts) await deleteDoc(doc(db, COL_PRODUCTS, p.id));
+  showToast(`Categoría "${cat}" eliminada`);
+}
+window.deleteCategory = deleteCategoryFn;
 
 function updateCatDatalist() {
   const cats = [...new Set(products.map(p => p.category))];
