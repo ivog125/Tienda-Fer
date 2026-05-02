@@ -45,11 +45,15 @@
 
   .hero {
     background: linear-gradient(135deg, var(--dark) 60%, var(--accent2) 100%);
-    color: #fff; padding: 4rem 2rem 3rem; text-align: center;
+    color: #fff; padding: 4rem 2rem 3.5rem; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 1rem;
   }
-  .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2rem,5vw,3.5rem); font-weight: 900; line-height: 1.1; }
-  .hero p { margin-top: .8rem; color: rgba(255,255,255,.7); font-size: 1.05rem; }
-  .hero-accent { color: var(--accent); }
+  .hero-brand { font-family: 'Playfair Display', serif; font-size: clamp(2.5rem,6vw,4rem); font-weight: 400; letter-spacing: 6px; color: #fff; text-transform: uppercase; }
+  .hero-brand-sub { font-size: .78rem; letter-spacing: 8px; color: var(--accent); text-transform: uppercase; margin-top: -.5rem; }
+  .hero-divider { width: 60px; height: 2px; background: var(--accent); border-radius: 2px; }
+  .hero-desc { color: rgba(255,255,255,.75); font-size: 1.05rem; max-width: 440px; line-height: 1.6; }
+  .hero-tags { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+  .hero-tag { border: 1px solid rgba(200,151,58,.5); color: var(--accent); font-size: .8rem; padding: .3rem .9rem; border-radius: 999px; }
 
   .filters { padding: 1.5rem 2rem 0; display: flex; gap: .6rem; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; }
   .filter-btn {
@@ -76,11 +80,11 @@
   }
   .card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(26,18,8,.13); }
   .card-img {
-    width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--border);
+    width: 100%; aspect-ratio: 3/4; background: var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-size: 3rem; color: var(--muted); min-height: 180px; overflow: hidden;
+    font-size: 3rem; color: var(--muted); overflow: hidden;
   }
-  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-img img { width: 100%; height: 100%; object-fit: contain; padding: .5rem; background: #fff; }
   .card-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: .4rem; }
   .card-name { font-weight: 500; font-size: .95rem; line-height: 1.3; }
   .card-size { font-size: .8rem; color: var(--muted); }
@@ -221,7 +225,7 @@
 </div>
 
 <header>
-  <div class="logo" id="logo-link">✦ Mi Catálogo</div>
+  <div class="logo" id="logo-link">✦ Novalook</div>
   <button class="cart-btn" onclick="openCart()" id="cart-toggle">
     🛒 Carrito <span class="cart-count" id="cart-count">0</span>
   </button>
@@ -230,8 +234,15 @@
 <!-- CATALOG -->
 <div class="catalog-view" id="catalog-view">
   <div class="hero">
-    <h1>Nuestros <span class="hero-accent">Productos</span></h1>
-    <p>Seleccioná lo que necesitás y escribinos por WhatsApp</p>
+    <div class="hero-brand">Novalook</div>
+    <div class="hero-brand-sub">Professional</div>
+    <div class="hero-divider"></div>
+    <p class="hero-desc">Productos capilares de calidad para peluquerías profesionales y de barrio</p>
+    <div class="hero-tags">
+      <span class="hero-tag">Calidad profesional</span>
+      <span class="hero-tag">Amplia variedad</span>
+      <span class="hero-tag">Para todo tipo de salón</span>
+    </div>
   </div>
   <div class="filters" id="filters-bar"></div>
   <main class="catalog" id="catalog-main"></main>
