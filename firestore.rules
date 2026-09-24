@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Reglas de Firestore para Tienda-Fer.
+// Publicar en: Firebase Console → Firestore Database → Rules.
+//
+// Lectura pública (el catálogo lo ve cualquiera), escritura solo para el admin.
+// `request.auth != null` solo NO alcanza: con Email/Password habilitado,
+// cualquiera puede registrarse con la apiKey pública y quedar autenticado.
+// Por eso se exige además que el UID esté en la lista de admins.
+// Reemplazar REEMPLAZAR_CON_UID_ADMIN por el "User UID" que muestra
+// Firebase Console → Authentication → Users al crear el usuario admin.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+          && request.auth.uid in ['REEMPLAZAR_CON_UID_ADMIN'];
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Todo lo demás, cerrado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
