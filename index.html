@@ -471,6 +471,7 @@ const ADMIN_ROUTE  = 'admin';
 let isAuthed = false;
 const COL_PRODUCTS = 'products';
 const DOC_CONFIG   = 'config';
+const CART_KEY     = 'tiendafer_cart';
 
 // ── CONFIG ────────────────────────────────────────────────
 async function loadConfig() {
@@ -517,11 +518,12 @@ async function uploadToCloudinary(file) {
 
 // ── PRODUCTS ──────────────────────────────────────────────
 let products = [];
-let cart = [];
+let cart = loadCart();
 
 function listenProducts() {
   onSnapshot(collection(db, COL_PRODUCTS), snap => {
     products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    syncCart();
     if (isAdminView()) { renderAdminList(); updateCatSelects(); }
     else renderCatalog(window._activeFilter || 'all');
     document.getElementById('loading').style.display = 'none';
@@ -725,6 +727,32 @@ window.switchAdminTab = function(tab) {
 };
 
 // ── CART ──────────────────────────────────────────────────
+// En localStorage se guarda solo {id, qty}; los datos del producto
+// (precio, nombre, imagen) se toman siempre de Firestore en syncCart().
+
+function loadCart() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    return Array.isArray(saved)
+      ? saved.filter(x => x && typeof x.id === 'string' && Number.isInteger(x.qty) && x.qty > 0)
+             .map(x => ({ id: x.id, qty: x.qty }))
+      : [];
+  } catch { return []; }
+}
+function saveCart() {
+  try { localStorage.setItem(CART_KEY, JSON.stringify(cart.map(x => ({ id: x.id, qty: x.qty })))); }
+  catch { /* storage no disponible (modo privado, bloqueado, etc.) */ }
+}
+// Rehidrata el carrito con los productos actuales; descarta los que ya
+// no existen o quedaron sin stock.
+function syncCart() {
+  cart = cart.map(item => {
+    const p = products.find(x => x.id === item.id);
+    return p && p.stock !== 'out' ? { ...p, qty: item.qty } : null;
+  }).filter(Boolean);
+  updateCartUI();
+}
+
 window.addToCart = function(id) {
   const p = products.find(x => x.id===id);
   if (!p || p.stock==='out') return;
@@ -742,6 +770,7 @@ window.changeQty = function(id, delta) {
 function updateCartUI() {
   document.getElementById('cart-count').textContent = cart.reduce((s,x)=>s+x.qty,0);
   renderDrawer();
+  saveCart();
 }
 function renderDrawer() {
   const el = document.getElementById('drawer-items');
