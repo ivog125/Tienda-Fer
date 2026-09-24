@@ -581,6 +581,14 @@ async function clearAllFn() {
 }
 window.clearAll = clearAllFn;
 
+// ── HTML ESCAPE ───────────────────────────────────────────
+// Todo dato de Firestore que se inserte vía innerHTML pasa por esc().
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+// Solo URLs https (evita javascript:, data:, etc. en src).
+function safeUrl(u) { return /^https:\/\//i.test(u || '') ? esc(u) : ''; }
+
 // ── CATALOG RENDER ────────────────────────────────────────
 const stockLabel = { in: 'En stock', low: 'Pocas unidades', out: 'Sin stock' };
 const stockClass = { in: 'stock-in', low: 'stock-low', out: 'stock-out' };
@@ -590,7 +598,7 @@ function renderCatalog(filterCat = 'all') {
   const categories = [...new Set(products.map(p => p.category))];
   const fb = document.getElementById('filters-bar');
   fb.innerHTML = `<button class="filter-btn ${filterCat==='all'?'active':''}" onclick="renderCatalog('all')">Todos</button>` +
-    categories.map(c => `<button class="filter-btn ${filterCat===c?'active':''}" onclick="renderCatalog('${c}')">${c}</button>`).join('');
+    categories.map(c => `<button class="filter-btn ${filterCat===c?'active':''}" data-cat="${esc(c)}" onclick="renderCatalog(this.dataset.cat)">${esc(c)}</button>`).join('');
   window.renderCatalog = renderCatalog;
 
   const main = document.getElementById('catalog-main');
@@ -603,20 +611,20 @@ function renderCatalog(filterCat = 'all') {
     const catProducts = products.filter(p => p.category === cat);
     if (!catProducts.length) return '';
     return `<div class="category-section">
-      <div class="category-title">${cat}</div>
+      <div class="category-title">${esc(cat)}</div>
       <div class="products-grid">
         ${catProducts.map(p => `
           <div class="card">
-            <div class="card-img">${p.img ? `<img src="${p.img}" alt="${p.name}" loading="lazy">` : '📦'}</div>
+            <div class="card-img">${safeUrl(p.img) ? `<img src="${safeUrl(p.img)}" alt="${esc(p.name)}" loading="lazy">` : '📦'}</div>
             <div class="card-body">
-              <div class="card-name">${p.name}</div>
-              ${p.size ? `<div class="card-size">${p.size}</div>` : ''}
-              ${p.desc ? `<div class="card-size" style="margin-top:.3rem">${p.desc}</div>` : ''}
+              <div class="card-name">${esc(p.name)}</div>
+              ${p.size ? `<div class="card-size">${esc(p.size)}</div>` : ''}
+              ${p.desc ? `<div class="card-size" style="margin-top:.3rem">${esc(p.desc)}</div>` : ''}
               <div class="card-price">
                 ${p.price ? '$' + Number(p.price).toLocaleString('es-AR') : 'Consultar'}
-                <span class="stock-badge ${stockClass[p.stock]}">${stockLabel[p.stock]}</span>
+                <span class="stock-badge ${stockClass[p.stock] || ''}">${stockLabel[p.stock] || ''}</span>
               </div>
-              <button class="add-btn" onclick="addToCart('${p.id}')" ${p.stock==='out'?'disabled':''}>
+              <button class="add-btn" data-id="${esc(p.id)}" onclick="addToCart(this.dataset.id)" ${p.stock==='out'?'disabled':''}>
                 ${p.stock==='out' ? 'Sin stock' : '+ Agregar al carrito'}
               </button>
             </div>
@@ -636,23 +644,23 @@ function renderAdminList() {
     const catProducts = products.filter(p => p.category === cat);
     return `
       <div class="admin-cat-header">
-        <span class="admin-cat-title">${cat} <small style="color:var(--muted);font-weight:400">(${catProducts.length} productos)</small></span>
-        <button class="danger-btn" onclick="deleteCategory('${cat}')">🗑 Eliminar categoría</button>
+        <span class="admin-cat-title">${esc(cat)} <small style="color:var(--muted);font-weight:400">(${catProducts.length} productos)</small></span>
+        <button class="danger-btn" data-cat="${esc(cat)}" onclick="deleteCategory(this.dataset.cat)">🗑 Eliminar categoría</button>
       </div>
       ${catProducts.map(p => `
-        <div class="admin-product-row">
-          <div class="admin-thumb">${p.img ? `<img src="${p.img}" alt="">` : '📦'}</div>
+        <div class="admin-product-row" data-id="${esc(p.id)}">
+          <div class="admin-thumb">${safeUrl(p.img) ? `<img src="${safeUrl(p.img)}" alt="">` : '📦'}</div>
           <div class="admin-product-info">
-            <strong>${p.name}</strong>
-            <span>${p.size ? p.size : ''} ${p.price ? '· $'+Number(p.price).toLocaleString('es-AR') : ''}</span>
+            <strong>${esc(p.name)}</strong>
+            <span>${esc(p.size)} ${p.price ? '· $'+Number(p.price).toLocaleString('es-AR') : ''}</span>
           </div>
-          <select class="stock-select" onchange="updateStock('${p.id}', this.value)">
+          <select class="stock-select" onchange="updateStock(this.closest('.admin-product-row').dataset.id, this.value)">
             <option value="in" ${p.stock==='in'?'selected':''}>✅ En stock</option>
             <option value="low" ${p.stock==='low'?'selected':''}>⚠ Pocas unidades</option>
             <option value="out" ${p.stock==='out'?'selected':''}>❌ Sin stock</option>
           </select>
-          <button class="edit-btn" onclick="openEditModal('${p.id}')">✏ Editar</button>
-          <button class="danger-btn" onclick="deleteProduct('${p.id}')">Eliminar</button>
+          <button class="edit-btn" onclick="openEditModal(this.closest('.admin-product-row').dataset.id)">✏ Editar</button>
+          <button class="danger-btn" onclick="deleteProduct(this.closest('.admin-product-row').dataset.id)">Eliminar</button>
         </div>`).join('')}
     `;
   }).join('');
@@ -668,7 +676,7 @@ window.deleteCategory = deleteCategoryFn;
 
 function updateCatDatalist() {
   const cats = [...new Set(products.map(p => p.category))];
-  document.getElementById('cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+  document.getElementById('cat-list').innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
 }
 window.updateCatDatalist = updateCatDatalist;
 
@@ -707,19 +715,19 @@ function renderDrawer() {
   const el = document.getElementById('drawer-items');
   if (!cart.length) { el.innerHTML='<div class="empty-cart">Tu carrito está vacío 🛒</div>'; document.getElementById('cart-total').textContent='$0'; return; }
   el.innerHTML = cart.map(item=>`
-    <div class="cart-item">
-      <div class="cart-item-img">${item.img?`<img src="${item.img}" alt="">`:'📦'}</div>
+    <div class="cart-item" data-id="${esc(item.id)}">
+      <div class="cart-item-img">${safeUrl(item.img)?`<img src="${safeUrl(item.img)}" alt="">`:'📦'}</div>
       <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-size">${item.size||''}</div>
+        <div class="cart-item-name">${esc(item.name)}</div>
+        <div class="cart-item-size">${esc(item.size)}</div>
         <div class="cart-item-price">$${(item.price*item.qty).toLocaleString('es-AR')}</div>
         <div class="qty-controls">
-          <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
+          <button class="qty-btn" onclick="changeQty(this.closest('.cart-item').dataset.id,-1)">−</button>
           <span class="qty-num">${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
+          <button class="qty-btn" onclick="changeQty(this.closest('.cart-item').dataset.id,1)">+</button>
         </div>
       </div>
-      <button class="remove-item" onclick="removeFromCart('${item.id}')" title="Eliminar">🗑</button>
+      <button class="remove-item" onclick="removeFromCart(this.closest('.cart-item').dataset.id)" title="Eliminar">🗑</button>
     </div>`).join('');
   document.getElementById('cart-total').textContent = '$' + cart.reduce((s,x)=>s+x.price*x.qty,0).toLocaleString('es-AR');
 }
