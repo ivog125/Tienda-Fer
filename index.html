@@ -167,6 +167,8 @@
   }
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
   .form-group.full { grid-column: 1 / -1; }
+  .form-group .cat-new { display: none; }
+  .form-group .cat-new.show { display: block; }
   .save-btn { margin-top: 1.2rem; background: var(--accent); color: var(--dark); border: none; border-radius: 8px; padding: .7rem 2rem; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background .18s; }
   .save-btn:hover { background: #e0a83c; }
   .save-btn:disabled { opacity: .6; cursor: not-allowed; }
@@ -306,8 +308,8 @@
       </div>
       <div class="form-group">
         <label>Categoría *</label>
-        <input type="text" id="p-cat" placeholder="Ej: BTX, Serum..." list="cat-list">
-        <datalist id="cat-list"></datalist>
+        <select id="p-cat" class="cat-select" onchange="toggleNewCat('p-cat')"></select>
+        <input type="text" id="p-cat-new" class="cat-new" placeholder="Nombre de la nueva categoría">
       </div>
       <div class="form-group">
         <label>Tamaño / Presentación</label>
@@ -408,7 +410,8 @@
       </div>
       <div class="form-group">
         <label>Categoría</label>
-        <input type="text" id="edit-cat" list="cat-list">
+        <select id="edit-cat" class="cat-select" onchange="toggleNewCat('edit-cat')"></select>
+        <input type="text" id="edit-cat-new" class="cat-new" placeholder="Nombre de la nueva categoría">
       </div>
       <div class="form-group">
         <label>Tamaño</label>
@@ -519,7 +522,7 @@ let cart = [];
 function listenProducts() {
   onSnapshot(collection(db, COL_PRODUCTS), snap => {
     products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (isAdminView()) renderAdminList();
+    if (isAdminView()) { renderAdminList(); updateCatSelects(); }
     else renderCatalog(window._activeFilter || 'all');
     document.getElementById('loading').style.display = 'none';
   });
@@ -527,7 +530,7 @@ function listenProducts() {
 
 async function saveProductFn() {
   const name = document.getElementById('p-name').value.trim();
-  const cat  = document.getElementById('p-cat').value.trim();
+  const cat  = readCat('p-cat');
   if (!name || !cat) { showToast('Nombre y categoría son obligatorios'); return; }
 
   const btn = document.getElementById('save-btn');
@@ -551,12 +554,12 @@ async function saveProductFn() {
     img:   imgUrl,
   });
 
-  ['p-name','p-cat','p-size','p-price','p-desc'].forEach(id => document.getElementById(id).value = '');
+  ['p-name','p-size','p-price','p-desc'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('p-stock').value = 'in';
   fileInput.value = '';
   document.getElementById('img-preview').style.display = 'none';
   btn.disabled = false; btn.textContent = 'Guardar Producto';
-  updateCatDatalist();
+  fillCatSelect('p-cat', '');
   showToast('✓ Producto guardado');
 }
 window.saveProduct = saveProductFn;
@@ -674,11 +677,40 @@ async function deleteCategoryFn(cat) {
 }
 window.deleteCategory = deleteCategoryFn;
 
-function updateCatDatalist() {
-  const cats = [...new Set(products.map(p => p.category))];
-  document.getElementById('cat-list').innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
+// ── CATEGORY SELECTS ──────────────────────────────────────
+const NEW_CAT = '__new__';
+
+function fillCatSelect(selectId, selected) {
+  const sel  = document.getElementById(selectId);
+  const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'es'));
+  const keep = selected ?? sel.value;
+  sel.innerHTML = `<option value="">Elegí una categoría…</option>` +
+    cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('') +
+    `<option value="${NEW_CAT}">+ Nueva categoría</option>`;
+  sel.value = (keep === NEW_CAT || cats.includes(keep)) ? keep : '';
+  toggleNewCat(selectId);
 }
-window.updateCatDatalist = updateCatDatalist;
+function updateCatSelects() {
+  fillCatSelect('p-cat');
+  fillCatSelect('edit-cat');
+}
+function toggleNewCat(selectId) {
+  const isNew = document.getElementById(selectId).value === NEW_CAT;
+  const input = document.getElementById(selectId + '-new');
+  input.classList.toggle('show', isNew);
+  if (!isNew) input.value = '';
+}
+window.toggleNewCat = toggleNewCat;
+
+// Devuelve la categoría elegida; si es nueva y coincide (sin distinguir
+// mayúsculas/espacios) con una existente, reutiliza la existente.
+function readCat(selectId) {
+  const val = document.getElementById(selectId).value;
+  if (val !== NEW_CAT) return val;
+  const typed = document.getElementById(selectId + '-new').value.trim().replace(/\s+/g, ' ');
+  const norm  = s => s.toLocaleLowerCase('es').normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return products.map(p => p.category).find(c => c && norm(c) === norm(typed)) || typed;
+}
 
 // ── ADMIN TABS ────────────────────────────────────────────
 window.switchAdminTab = function(tab) {
@@ -749,7 +781,7 @@ window.openEditModal = function(id) {
   if (!p) return;
   document.getElementById('edit-id').value    = p.id;
   document.getElementById('edit-name').value  = p.name;
-  document.getElementById('edit-cat').value   = p.category;
+  fillCatSelect('edit-cat', p.category);
   document.getElementById('edit-size').value  = p.size || '';
   document.getElementById('edit-price').value = p.price || '';
   document.getElementById('edit-stock').value = p.stock;
@@ -781,7 +813,10 @@ window.previewEditImg = function(input) {
   reader.readAsDataURL(input.files[0]);
 };
 window.saveEdit = async function() {
-  const id  = document.getElementById('edit-id').value;
+  const id   = document.getElementById('edit-id').value;
+  const name = document.getElementById('edit-name').value.trim();
+  const cat  = readCat('edit-cat');
+  if (!name || !cat) { showToast('Nombre y categoría son obligatorios'); return; }
   const btn = document.getElementById('edit-save-btn');
   btn.disabled = true; btn.textContent = 'Guardando...';
 
@@ -794,8 +829,8 @@ window.saveEdit = async function() {
   }
 
   const updates = {
-    name:     document.getElementById('edit-name').value.trim(),
-    category: document.getElementById('edit-cat').value.trim(),
+    name,
+    category: cat,
     size:     document.getElementById('edit-size').value.trim(),
     price:    parseFloat(document.getElementById('edit-price').value) || 0,
     stock:    document.getElementById('edit-stock').value,
@@ -857,7 +892,7 @@ function route() {
   document.getElementById('admin-login').classList.toggle('active', adminRoute && !isAuthed);
   document.getElementById('admin-panel').classList.toggle('active', showPanel);
   document.getElementById('cart-toggle').style.display = adminRoute ? 'none' : '';
-  if (showPanel) { renderAdminList(); updateCatDatalist(); }
+  if (showPanel) { renderAdminList(); updateCatSelects(); }
   else if (!adminRoute) renderCatalog(window._activeFilter || 'all');
 }
 window.addEventListener('hashchange', route);
