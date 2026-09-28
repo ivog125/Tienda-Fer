@@ -28,6 +28,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Todo lo demás, cerrado.
     match /{document=**} {
       allow read, write: if false;

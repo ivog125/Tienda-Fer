@@ -8,7 +8,7 @@
      armar la vista previa: estos valores estáticos son los que se usan. -->
 <meta name="description" content="Productos capilares de calidad para peluquerías profesionales y de barrio. Mirá el catálogo y hacé tu pedido por WhatsApp.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Tienda de Belleza FG — Catálogo">
+<meta property="og:title" content="El Rey Capilar — Catálogo">
 <meta property="og:description" content="Productos capilares de calidad para peluquerías profesionales y de barrio. Mirá el catálogo y hacé tu pedido por WhatsApp.">
 <meta property="og:image" id="og-image" content="https://res.cloudinary.com/dtpx63icx/image/upload/c_pad,w_1200,h_630,b_white/v1777666149/maybetei32yosy1rwzhu.jpg">
 <meta property="og:image:width" content="1200">
@@ -64,6 +64,25 @@
   .hero-desc { color: rgba(255,255,255,.75); font-size: 1.05rem; max-width: 440px; line-height: 1.6; }
   .hero-tags { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
   .hero-tag { border: 1px solid rgba(200,151,58,.5); color: var(--accent); font-size: .8rem; padding: .3rem .9rem; border-radius: 999px; }
+
+  .banner-carousel { position: relative; max-width: 1200px; margin: 2rem auto 0; padding: 0 2rem; }
+  .banner-track-wrap { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .banner-track { display: flex; transition: transform .45s cubic-bezier(.4,0,.2,1); }
+  .banner-slide { flex: 0 0 100%; aspect-ratio: 21/7; background: var(--border); }
+  .banner-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .banner-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+    background: rgba(26,18,8,.55); color: #fff; border: none; border-radius: 50%;
+    width: 38px; height: 38px; font-size: 1.4rem; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background .18s;
+  }
+  .banner-arrow:hover { background: rgba(26,18,8,.85); }
+  .banner-prev { left: 1rem; }
+  .banner-next { right: 1rem; }
+  .banner-dots { display: flex; gap: .5rem; justify-content: center; margin-top: .8rem; }
+  .banner-dot { width: 8px; height: 8px; border-radius: 50%; border: none; background: var(--border); cursor: pointer; padding: 0; }
+  .banner-dot.active { background: var(--accent); }
+  @media(max-width:640px){ .banner-carousel { padding: 0 1rem; margin-top: 1.5rem; } .banner-slide { aspect-ratio: 4/3; } }
 
   .filters { padding: 1.5rem 2rem 0; display: flex; gap: .6rem; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; }
   .filter-btn {
@@ -253,7 +272,7 @@
 <!-- CATALOG -->
 <div class="catalog-view" id="catalog-view">
   <div class="hero">
-    <div class="hero-brand">Tienda de Belleza FG</div>
+    <div class="hero-brand">El Rey Capilar</div>
     <div class="hero-brand-sub">Catálogo online</div>
     <div class="hero-divider"></div>
     <p class="hero-desc">Productos capilares de calidad para peluquerías profesionales y de barrio</p>
@@ -262,6 +281,14 @@
       <span class="hero-tag">Amplia variedad</span>
       <span class="hero-tag">Para todo tipo de salón</span>
     </div>
+  </div>
+  <div class="banner-carousel" id="banner-carousel" style="display:none">
+    <div class="banner-track-wrap">
+      <div class="banner-track" id="banner-track"></div>
+    </div>
+    <button class="banner-arrow banner-prev" id="banner-prev" aria-label="Anterior">‹</button>
+    <button class="banner-arrow banner-next" id="banner-next" aria-label="Siguiente">›</button>
+    <div class="banner-dots" id="banner-dots"></div>
   </div>
   <div class="filters" id="filters-bar"></div>
   <main class="catalog" id="catalog-main"></main>
@@ -300,6 +327,7 @@
   <div class="admin-tabs">
     <button class="admin-tab active" onclick="switchAdminTab('stock')">Gestionar Stock</button>
     <button class="admin-tab" onclick="switchAdminTab('add')">Agregar Producto</button>
+    <button class="admin-tab" onclick="switchAdminTab('banner')">Banner</button>
     <button class="admin-tab" onclick="switchAdminTab('config')">Configuración</button>
   </div>
 
@@ -349,6 +377,16 @@
       </div>
     </div>
     <button class="save-btn" id="save-btn" onclick="saveProduct()">Guardar Producto</button>
+  </div>
+
+  <div class="admin-section" id="tab-banner">
+    <div class="form-group">
+      <label for="banner-img">Nueva imagen para el carrusel</label>
+      <input type="file" id="banner-img" accept="image/*">
+      <div class="upload-progress" id="banner-upload-progress" style="display:none">Subiendo imagen...</div>
+    </div>
+    <button class="save-btn" id="banner-save-btn" onclick="addBanner()">Agregar al carrusel</button>
+    <div id="admin-banner-list" style="margin-top:1.5rem"></div>
   </div>
 
   <div class="admin-section" id="tab-config">
@@ -461,7 +499,7 @@
 <!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -480,6 +518,7 @@ const auth = getAuth(app);
 const ADMIN_ROUTE  = 'admin';
 let isAuthed = false;
 const COL_PRODUCTS = 'products';
+const COL_BANNERS  = 'banners';
 const DOC_CONFIG   = 'config';
 const CART_KEY     = 'tiendafer_cart';
 
@@ -528,6 +567,7 @@ async function uploadToCloudinary(file) {
 
 // ── PRODUCTS ──────────────────────────────────────────────
 let products = [];
+let banners  = [];
 let cart = loadCart();
 
 function listenProducts() {
@@ -539,6 +579,114 @@ function listenProducts() {
     else renderCatalog(window._activeFilter || 'all');
     document.getElementById('loading').style.display = 'none';
   });
+}
+
+// ── BANNER CAROUSEL ───────────────────────────────────────
+function listenBanners() {
+  onSnapshot(query(collection(db, COL_BANNERS), orderBy('order')), snap => {
+    banners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderBannerCarousel();
+    if (isAdminView()) renderAdminBanners();
+  });
+}
+
+let bannerIndex = 0;
+let bannerTimer = null;
+let bannerHovered = false;
+
+function renderBannerCarousel() {
+  const wrap  = document.getElementById('banner-carousel');
+  const track = document.getElementById('banner-track');
+  const dots  = document.getElementById('banner-dots');
+  stopBannerAutoplay();
+  if (!banners.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  track.innerHTML = banners.map(b =>
+    `<div class="banner-slide">${safeUrl(b.img) ? `<img src="${safeUrl(b.img)}" alt="" loading="lazy">` : ''}</div>`
+  ).join('');
+  dots.innerHTML = banners.map((_, i) => `<button class="banner-dot" aria-label="Mostrar banner ${i + 1}" onclick="showBannerSlide(${i})"></button>`).join('');
+  const multi = banners.length > 1;
+  dots.style.display = document.getElementById('banner-prev').style.display =
+    document.getElementById('banner-next').style.display = multi ? '' : 'none';
+  bannerIndex = Math.min(bannerIndex, banners.length - 1);
+  showBannerSlide(bannerIndex);
+  startBannerAutoplay();
+}
+
+function showBannerSlide(i) {
+  if (!banners.length) return;
+  bannerIndex = ((i % banners.length) + banners.length) % banners.length;
+  document.getElementById('banner-track').style.transform = `translateX(-${bannerIndex * 100}%)`;
+  document.querySelectorAll('#banner-dots .banner-dot').forEach((dot, idx) => dot.classList.toggle('active', idx === bannerIndex));
+}
+window.showBannerSlide = showBannerSlide;
+
+function nextBannerSlide() { showBannerSlide(bannerIndex + 1); }
+function prevBannerSlide() { showBannerSlide(bannerIndex - 1); }
+function startBannerAutoplay() {
+  stopBannerAutoplay();
+  if (banners.length > 1 && !bannerHovered) bannerTimer = setInterval(nextBannerSlide, 5000);
+}
+function stopBannerAutoplay() {
+  if (bannerTimer) { clearInterval(bannerTimer); bannerTimer = null; }
+}
+
+async function addBannerFn() {
+  const fileInput = document.getElementById('banner-img');
+  if (!fileInput.files.length) { showToast('Elegí una imagen'); return; }
+  const btn = document.getElementById('banner-save-btn');
+  const progress = document.getElementById('banner-upload-progress');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  progress.style.display = 'block';
+  try {
+    const url = await uploadToCloudinary(fileInput.files[0]);
+    if (!safeUrl(url)) { showToast('No se pudo subir la imagen'); return; }
+    const maxOrder = banners.reduce((max, banner) => Math.max(max, Number.isFinite(banner.order) ? banner.order : 0), 0);
+    await addDoc(collection(db, COL_BANNERS), { img: url, order: maxOrder + 1 });
+    fileInput.value = '';
+    showToast('✓ Imagen agregada al carrusel');
+  } catch (error) {
+    console.error('Error al guardar el banner:', error);
+    showToast('No se pudo guardar la imagen');
+  } finally {
+    progress.style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Agregar al carrusel';
+  }
+}
+window.addBanner = addBannerFn;
+
+async function deleteBannerFn(id) {
+  if (!confirm('¿Eliminar esta imagen del carrusel?')) return;
+  await deleteDoc(doc(db, COL_BANNERS, id));
+  showToast('Imagen eliminada');
+}
+window.deleteBanner = deleteBannerFn;
+
+async function moveBannerFn(id, dir) {
+  const index = banners.findIndex(banner => banner.id === id);
+  const swapIndex = index + dir;
+  if (index < 0 || swapIndex < 0 || swapIndex >= banners.length) return;
+  const current = banners[index], adjacent = banners[swapIndex];
+  await Promise.all([
+    updateDoc(doc(db, COL_BANNERS, current.id), { order: adjacent.order }),
+    updateDoc(doc(db, COL_BANNERS, adjacent.id), { order: current.order }),
+  ]);
+}
+window.moveBanner = moveBannerFn;
+
+function renderAdminBanners() {
+  const el = document.getElementById('admin-banner-list');
+  if (!banners.length) { el.innerHTML = '<p style="color:var(--muted)">Todavía no hay imágenes en el carrusel.</p>'; return; }
+  el.innerHTML = banners.map((banner, index) => `
+    <div class="admin-product-row" data-id="${esc(banner.id)}">
+      <div class="admin-thumb">${safeUrl(banner.img) ? `<img src="${safeUrl(banner.img)}" alt="">` : '🖼'}</div>
+      <div class="admin-product-info"><span>Posición ${index + 1} de ${banners.length}</span></div>
+      <button class="edit-btn" ${index === 0 ? 'disabled' : ''} onclick="moveBanner(this.closest('.admin-product-row').dataset.id,-1)" aria-label="Mover arriba">↑</button>
+      <button class="edit-btn" ${index === banners.length - 1 ? 'disabled' : ''} onclick="moveBanner(this.closest('.admin-product-row').dataset.id,1)" aria-label="Mover abajo">↓</button>
+      <button class="danger-btn" onclick="deleteBanner(this.closest('.admin-product-row').dataset.id)">Eliminar</button>
+    </div>`).join('');
 }
 
 // Actualiza og:image con el primer producto que tenga imagen (útil para
@@ -736,9 +884,10 @@ function readCat(selectId) {
 
 // ── ADMIN TABS ────────────────────────────────────────────
 window.switchAdminTab = function(tab) {
-  document.querySelectorAll('.admin-tab').forEach((btn,i) => btn.classList.toggle('active', ['stock','add','config'][i]===tab));
-  document.querySelectorAll('.admin-section').forEach((sec,i) => sec.classList.toggle('active', ['tab-stock','tab-add','tab-config'][i]===`tab-${tab}`));
+  document.querySelectorAll('.admin-tab').forEach((btn,i) => btn.classList.toggle('active', ['stock','add','banner','config'][i]===tab));
+  document.querySelectorAll('.admin-section').forEach((sec,i) => sec.classList.toggle('active', ['tab-stock','tab-add','tab-banner','tab-config'][i]===`tab-${tab}`));
   if (tab==='stock') renderAdminList();
+  if (tab==='banner') renderAdminBanners();
   if (tab==='config') loadConfig().then(cfg => {
     document.getElementById('wa-number').value = cfg.wa||'';
     document.getElementById('shop-name').value = cfg.name||'';
@@ -949,8 +1098,26 @@ document.getElementById('logo-link').onclick = () => { location.hash=''; };
 
 onAuthStateChanged(auth, user => { isAuthed = !!user; route(); });
 
+// ── BANNER CAROUSEL CONTROLS ──────────────────────────────
+document.getElementById('banner-prev').onclick = prevBannerSlide;
+document.getElementById('banner-next').onclick = nextBannerSlide;
+(function wireBannerControls() {
+  const carousel = document.getElementById('banner-carousel');
+  carousel.addEventListener('mouseenter', () => { bannerHovered = true; stopBannerAutoplay(); });
+  carousel.addEventListener('mouseleave', () => { bannerHovered = false; startBannerAutoplay(); });
+  let touchStartX = null;
+  carousel.addEventListener('touchstart', event => { touchStartX = event.touches[0].clientX; }, { passive: true });
+  carousel.addEventListener('touchend', event => {
+    if (touchStartX === null) return;
+    const deltaX = event.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(deltaX) > 40) (deltaX < 0 ? nextBannerSlide() : prevBannerSlide());
+    touchStartX = null;
+  }, { passive: true });
+  carousel.addEventListener('touchcancel', () => { touchStartX = null; }, { passive: true });
+})();
+
 // ── INIT ──────────────────────────────────────────────────
-loadConfig().then(cfg => { applyConfig(cfg); listenProducts(); route(); });
+loadConfig().then(cfg => { applyConfig(cfg); listenProducts(); listenBanners(); route(); });
 </script>
 </body>
 </html>
