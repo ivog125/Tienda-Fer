@@ -53,36 +53,54 @@
     font-size: .75rem; font-weight: 700;
   }
 
-  .hero {
-    background: linear-gradient(135deg, var(--dark) 60%, var(--accent2) 100%);
-    color: #fff; padding: 4rem 2rem 3.5rem; text-align: center;
-    display: flex; flex-direction: column; align-items: center; gap: 1rem;
-  }
-  .hero-brand { font-family: 'Playfair Display', serif; font-size: clamp(2.5rem,6vw,4rem); font-weight: 400; letter-spacing: 6px; color: #fff; text-transform: uppercase; }
-  .hero-brand-sub { font-size: .78rem; letter-spacing: 8px; color: var(--accent); text-transform: uppercase; margin-top: -.5rem; }
-  .hero-divider { width: 60px; height: 2px; background: var(--accent); border-radius: 2px; }
-  .hero-desc { color: rgba(255,255,255,.75); font-size: 1.05rem; max-width: 440px; line-height: 1.6; }
-  .hero-tags { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
-  .hero-tag { border: 1px solid rgba(200,151,58,.5); color: var(--accent); font-size: .8rem; padding: .3rem .9rem; border-radius: 999px; }
-
-  .banner-carousel { position: relative; max-width: 1200px; margin: 2rem auto 0; padding: 0 2rem; }
-  .banner-track-wrap { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .banner-carousel { position: relative; width: 100%; }
+  .banner-track-wrap { width: 100%; overflow: hidden; }
   .banner-track { display: flex; transition: transform .45s cubic-bezier(.4,0,.2,1); }
-  .banner-slide { flex: 0 0 100%; aspect-ratio: 21/7; background: var(--border); }
-  .banner-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .banner-slide {
+    position: relative; flex: 0 0 100%; height: 440px; overflow: hidden;
+    display: flex; align-items: center; background: var(--border);
+  }
+  .banner-slide img { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .banner-slide::after {
+    content: ''; position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(90deg, rgba(26,18,8,.6) 0%, rgba(26,18,8,.25) 45%, transparent 68%);
+  }
+  .banner-content { position: relative; z-index: 2; max-width: 460px; margin-left: 4rem; color: #fff; display: flex; flex-direction: column; gap: .6rem; }
+  .banner-cat { font-size: .75rem; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  .banner-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 400; line-height: 1.2; }
+  .banner-subtitle { font-size: 1rem; font-style: italic; color: rgba(255,255,255,.85); }
+  .banner-cta {
+    align-self: flex-start; margin-top: .4rem; background: var(--accent); color: var(--dark);
+    border: none; border-radius: 8px; padding: .7rem 1.3rem; font-family: 'DM Sans', sans-serif;
+    font-weight: 600; font-size: .9rem; cursor: pointer; display: flex; align-items: center; gap: .5rem; transition: background .2s;
+  }
+  .banner-cta:hover { background: #e0a83c; }
   .banner-arrow {
     position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
-    background: rgba(26,18,8,.55); color: #fff; border: none; border-radius: 50%;
+    background: rgba(255,255,255,.85); color: var(--dark); border: none; border-radius: 50%;
     width: 38px; height: 38px; font-size: 1.4rem; line-height: 1; cursor: pointer;
     display: flex; align-items: center; justify-content: center; transition: background .18s;
   }
-  .banner-arrow:hover { background: rgba(26,18,8,.85); }
+  .banner-arrow:hover { background: #fff; }
   .banner-prev { left: 1rem; }
   .banner-next { right: 1rem; }
-  .banner-dots { display: flex; gap: .5rem; justify-content: center; margin-top: .8rem; }
-  .banner-dot { width: 8px; height: 8px; border-radius: 50%; border: none; background: var(--border); cursor: pointer; padding: 0; }
+  .banner-dots { position: absolute; left: 0; right: 0; bottom: 1rem; z-index: 2; display: flex; gap: .5rem; justify-content: center; }
+  .banner-dot { width: 8px; height: 8px; border-radius: 50%; border: none; background: rgba(255,255,255,.5); cursor: pointer; padding: 0; }
   .banner-dot.active { background: var(--accent); }
-  @media(max-width:640px){ .banner-carousel { padding: 0 1rem; margin-top: 1.5rem; } .banner-slide { aspect-ratio: 4/3; } }
+
+  .trust-strip {
+    display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap;
+    padding: 1rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border);
+    font-size: .85rem; color: var(--muted);
+  }
+  .trust-item { display: flex; align-items: center; gap: .5rem; }
+
+  @media(max-width:640px){
+    .banner-slide { height: 380px; }
+    .banner-content { margin-left: 1.2rem; max-width: 78%; }
+    .banner-title { font-size: 1.7rem; }
+    .trust-strip { gap: 1.2rem; padding: .8rem 1rem; font-size: .78rem; }
+  }
 
   .filters { padding: 1.5rem 2rem 0; display: flex; gap: .6rem; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; }
   .filter-btn {
@@ -251,7 +269,7 @@
   .footer-wa:hover { background: #1ebe5d; }
   .footer-copy { font-size: .8rem; color: rgba(255,255,255,.4); }
 
-  @media(max-width:640px){ .hero { padding: 2.5rem 1rem 2rem; } .catalog, .filters { padding: 1rem; } .card-name { font-size: .82rem; } .card-size { font-size: .72rem; } .card-price { font-size: 1rem; } .add-btn { font-size: .8rem; padding: .45rem; } }
+  @media(max-width:640px){ .catalog, .filters { padding: 1rem; } .card-name { font-size: .82rem; } .card-size { font-size: .72rem; } .card-price { font-size: 1rem; } .add-btn { font-size: .8rem; padding: .45rem; } }
 </style>
 </head>
 <body>
@@ -271,17 +289,6 @@
 
 <!-- CATALOG -->
 <div class="catalog-view" id="catalog-view">
-  <div class="hero">
-    <div class="hero-brand">El Rey Capilar</div>
-    <div class="hero-brand-sub">Catálogo online</div>
-    <div class="hero-divider"></div>
-    <p class="hero-desc">Productos capilares de calidad para peluquerías profesionales</p>
-    <div class="hero-tags">
-      <span class="hero-tag">Calidad profesional</span>
-      <span class="hero-tag">Amplia variedad</span>
-      <span class="hero-tag">Para todo tipo de salón</span>
-    </div>
-  </div>
   <div class="banner-carousel" id="banner-carousel" style="display:none">
     <div class="banner-track-wrap">
       <div class="banner-track" id="banner-track"></div>
@@ -289,6 +296,11 @@
     <button class="banner-arrow banner-prev" id="banner-prev" aria-label="Anterior">‹</button>
     <button class="banner-arrow banner-next" id="banner-next" aria-label="Siguiente">›</button>
     <div class="banner-dots" id="banner-dots"></div>
+  </div>
+  <div class="trust-strip">
+    <span class="trust-item">⭐ Calidad profesional</span>
+    <span class="trust-item">📦 Amplia variedad</span>
+    <span class="trust-item">❤ Para todo tipo de salón</span>
   </div>
   <div class="filters" id="filters-bar"></div>
   <main class="catalog" id="catalog-main"></main>
@@ -384,6 +396,23 @@
       <label for="banner-img">Nueva imagen para el carrusel</label>
       <input type="file" id="banner-img" accept="image/*">
       <div class="upload-progress" id="banner-upload-progress" style="display:none">Subiendo imagen...</div>
+    </div>
+    <div class="form-group">
+      <label for="banner-cat">Categoría (define a dónde lleva el botón)</label>
+      <select id="banner-cat" class="cat-select" onchange="toggleNewCat('banner-cat')"></select>
+      <input type="text" id="banner-cat-new" class="cat-new" placeholder="Nombre de la categoría">
+    </div>
+    <div class="form-group">
+      <label for="banner-title">Título</label>
+      <input type="text" id="banner-title" placeholder="Ej: Shampoo y acondicionador">
+    </div>
+    <div class="form-group">
+      <label for="banner-subtitle">Subtítulo (opcional)</label>
+      <input type="text" id="banner-subtitle" placeholder="Ej: Color vibrante, cabello protegido">
+    </div>
+    <div class="form-group">
+      <label for="banner-cta">Texto del botón</label>
+      <input type="text" id="banner-cta" placeholder="Ver productos" value="Ver productos">
     </div>
     <button class="save-btn" id="banner-save-btn" onclick="addBanner()">Agregar al carrusel</button>
     <div id="admin-banner-list" style="margin-top:1.5rem"></div>
@@ -570,6 +599,12 @@ let products = [];
 let banners  = [];
 let cart = loadCart();
 
+let productsReady = false;
+let bannersReady  = false;
+function hideLoadingWhenReady() {
+  if (productsReady && bannersReady) document.getElementById('loading').style.display = 'none';
+}
+
 function listenProducts() {
   onSnapshot(collection(db, COL_PRODUCTS), snap => {
     products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -577,7 +612,12 @@ function listenProducts() {
     updateOgImage();
     if (isAdminView()) { renderAdminList(); updateCatSelects(); }
     else renderCatalog(window._activeFilter || 'all');
-    document.getElementById('loading').style.display = 'none';
+    productsReady = true;
+    hideLoadingWhenReady();
+  }, error => {
+    console.error('Error al cargar productos:', error);
+    productsReady = true;
+    hideLoadingWhenReady();
   });
 }
 
@@ -587,6 +627,14 @@ function listenBanners() {
     banners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderBannerCarousel();
     if (isAdminView()) renderAdminBanners();
+    bannersReady = true;
+    hideLoadingWhenReady();
+  }, error => {
+    console.error('Error al cargar banners:', error);
+    banners = [];
+    renderBannerCarousel();
+    bannersReady = true;
+    hideLoadingWhenReady();
   });
 }
 
@@ -601,8 +649,16 @@ function renderBannerCarousel() {
   stopBannerAutoplay();
   if (!banners.length) { wrap.style.display = 'none'; return; }
   wrap.style.display = '';
-  track.innerHTML = banners.map(b =>
-    `<div class="banner-slide">${safeUrl(b.img) ? `<img src="${safeUrl(b.img)}" alt="" loading="lazy">` : ''}</div>`
+  track.innerHTML = banners.map(b => `
+    <div class="banner-slide">
+      ${safeUrl(b.img) ? `<img src="${safeUrl(b.img)}" alt="" loading="lazy">` : ''}
+      <div class="banner-content">
+        ${b.category ? `<div class="banner-cat">${esc(b.category)}</div>` : ''}
+        ${b.title ? `<h2 class="banner-title">${esc(b.title)}</h2>` : ''}
+        ${b.subtitle ? `<p class="banner-subtitle">${esc(b.subtitle)}</p>` : ''}
+        ${b.category ? `<button class="banner-cta" data-cat="${esc(b.category)}" onclick="goToCategory(this.dataset.cat)">${esc(b.ctaText || 'Ver productos')} →</button>` : ''}
+      </div>
+    </div>`
   ).join('');
   dots.innerHTML = banners.map((_, i) => `<button class="banner-dot" aria-label="Mostrar banner ${i + 1}" onclick="showBannerSlide(${i})"></button>`).join('');
   const multi = banners.length > 1;
@@ -620,6 +676,12 @@ function showBannerSlide(i) {
   document.querySelectorAll('#banner-dots .banner-dot').forEach((dot, idx) => dot.classList.toggle('active', idx === bannerIndex));
 }
 window.showBannerSlide = showBannerSlide;
+
+function goToCategory(cat) {
+  renderCatalog(cat);
+  document.getElementById('filters-bar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+window.goToCategory = goToCategory;
 
 function nextBannerSlide() { showBannerSlide(bannerIndex + 1); }
 function prevBannerSlide() { showBannerSlide(bannerIndex - 1); }
@@ -642,9 +704,17 @@ async function addBannerFn() {
   try {
     const url = await uploadToCloudinary(fileInput.files[0]);
     if (!safeUrl(url)) { showToast('No se pudo subir la imagen'); return; }
+    const category = readCat('banner-cat');
+    const title    = document.getElementById('banner-title').value.trim();
+    const subtitle = document.getElementById('banner-subtitle').value.trim();
+    const ctaText  = document.getElementById('banner-cta').value.trim() || 'Ver productos';
     const maxOrder = banners.reduce((max, banner) => Math.max(max, Number.isFinite(banner.order) ? banner.order : 0), 0);
-    await addDoc(collection(db, COL_BANNERS), { img: url, order: maxOrder + 1 });
+    await addDoc(collection(db, COL_BANNERS), { img: url, order: maxOrder + 1, category, title, subtitle, ctaText });
     fileInput.value = '';
+    fillCatSelect('banner-cat', '');
+    document.getElementById('banner-title').value = '';
+    document.getElementById('banner-subtitle').value = '';
+    document.getElementById('banner-cta').value = 'Ver productos';
     showToast('✓ Imagen agregada al carrusel');
   } catch (error) {
     console.error('Error al guardar el banner:', error);
@@ -682,7 +752,10 @@ function renderAdminBanners() {
   el.innerHTML = banners.map((banner, index) => `
     <div class="admin-product-row" data-id="${esc(banner.id)}">
       <div class="admin-thumb">${safeUrl(banner.img) ? `<img src="${safeUrl(banner.img)}" alt="">` : '🖼'}</div>
-      <div class="admin-product-info"><span>Posición ${index + 1} de ${banners.length}</span></div>
+      <div class="admin-product-info">
+        <strong>${esc(banner.title || '(sin título)')}</strong>
+        <span>${esc(banner.category || 'sin categoría')} · Posición ${index + 1} de ${banners.length}</span>
+      </div>
       <button class="edit-btn" ${index === 0 ? 'disabled' : ''} onclick="moveBanner(this.closest('.admin-product-row').dataset.id,-1)" aria-label="Mover arriba">↑</button>
       <button class="edit-btn" ${index === banners.length - 1 ? 'disabled' : ''} onclick="moveBanner(this.closest('.admin-product-row').dataset.id,1)" aria-label="Mover abajo">↓</button>
       <button class="danger-btn" onclick="deleteBanner(this.closest('.admin-product-row').dataset.id)">Eliminar</button>
@@ -863,6 +936,7 @@ function fillCatSelect(selectId, selected) {
 function updateCatSelects() {
   fillCatSelect('p-cat');
   fillCatSelect('edit-cat');
+  fillCatSelect('banner-cat');
 }
 function toggleNewCat(selectId) {
   const isNew = document.getElementById(selectId).value === NEW_CAT;
